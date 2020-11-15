@@ -1,0 +1,5 @@
+[2020-11-08 15:37:50] isucari.ERROR: cURL error 7: Failed to connect to localhost port 7000: Connection refused (see http://curl.haxx.se/libcurl/c/libcurl-errors.html) [] {"uid":"6195b36"}
+[2020-11-08 15:43:56] isucari.ERROR: cURL error 52: Empty reply from server (see http://curl.haxx.se/libcurl/c/libcurl-errors.html) [] {"uid":"a625c63"}
+[2020-11-08 16:02:09] isucari.ERROR: cURL error 52: Empty reply from server (see http://curl.haxx.se/libcurl/c/libcurl-errors.html) [] {"uid":"ec4ee08"}
+[2020-11-10 19:24:22] isucari.WARNING: no session [] {"uid":"f084f72"}
+[2020-11-14 10:39:40] isucari.WARNING: no session [] {"uid":"697bd66"}

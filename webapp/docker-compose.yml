@@ -1,0 +1,37 @@
+version: "3"
+services:
+  mysql:
+    build: ./sql
+    volumes:
+      - ./sql/docker-init:/docker-entrypoint-initdb.d
+      - ./sql/init.sh:/init.sh
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: isucari
+      MYSQL_USER: isucari
+      MYSQL_PASSWORD: isucari
+      LANG: C.UTF-8
+    ports:
+      - "3306:3306"
+    
+  api-server:
+    build: ./php
+    volumes:
+      - ./php:/var/www/html/php
+    environment:
+      MYSQL_DBNAME: isucari
+      MYSQL_USER: isucari
+      MYSQL_PASS: isucari
+      MYSQL_HOST: mysql
+    ports:
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:5555:5555"
+      - "127.0.0.1:7000:7000"
+    depends_on:
+      - mysql
+
+  #payment:
+  #  build: ./payment
+    
+  #shipment:
+  #  build: ./shipment
