@@ -2,7 +2,7 @@ FROM php:7.2-cli
 
 WORKDIR /var/www/html/php/public
 
-EXPOSE 8000
+EXPOSE 80
 
 COPY . /var/www/html/php
 COPY 000-default.conf /etc/apache2/sites-available/000-default.conf

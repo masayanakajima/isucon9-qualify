@@ -24,7 +24,7 @@ services:
       MYSQL_PASS: isucari
       MYSQL_HOST: mysql
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:80:80"
       - "127.0.0.1:5555:5555"
       - "127.0.0.1:7000:7000"
     depends_on:
@@ -35,3 +35,14 @@ services:
     
   #shipment:
   #  build: ./shipment
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "8000:8000"
+    environment:
+      API_SERVER: api-server
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - api-server

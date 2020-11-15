@@ -26,6 +26,6 @@
         "sort-packages": true
     },
     "scripts": {
-        "start": "php -S 0.0.0.0:8000 index.php"
+        "start": "php -S 0.0.0.0:80 index.php"
     }
 }

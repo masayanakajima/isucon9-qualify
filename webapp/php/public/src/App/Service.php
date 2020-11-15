@@ -190,21 +190,20 @@ class Service
 
     private function getPaymentServiceURL()
     {
-
-        $config = $this->getConfigByName('payment_service_url');
-        if (empty($config['val'])) {
-            return "http://localhost:5555";
-        }
-        return $config['val'];
+        //$config = $this->getConfigByName('payment_service_url');
+        //if (empty($config['val'])) {
+            return "http://192.168.10.101:5555";
+        //}
+        //return $config['val'];
     }
 
     private function getShipmentServiceURL()
     {
-        $config = $this->getConfigByName('shipment_service_url');
-        if (empty($config['val'])) {
-            return "http://localhost:7000";
-        }
-        return $config['val'];
+        //$config = $this->getConfigByName('shipment_service_url');
+        //if (empty($config['val'])) {
+            return "http://192.168.10.101:7000";
+        //}
+        //return $config['val'];
     }
 
     public function initialize(Request $request, Response $response, array $args)
