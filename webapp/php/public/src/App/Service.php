@@ -257,8 +257,14 @@ class Service
         try {
             if ($itemId !== "" && $createdAt > 0) {
                 // paging
-                $sth = $this->dbh->prepare('SELECT * FROM `items` WHERE `status` IN (?,?) AND (`created_at` < ? OR (`created_at` <=? AND `id` < ?)) '.
-                    'ORDER BY `created_at` DESC, `id` DESC LIMIT ?');
+                $sth = $this->dbh->prepare('SELECT items.id, items.seller_id, users.account_name, users.num_sell_items, items.status, items.name, items.price, items.image_name, items.category_id, cat.category_name, cat.parent_id,
+                                            CASE cat.parent_id 
+                                            WHEN 0 THEN NULL 
+                                            ELSE (SELECT category_name AS parent_cat_name FROM categories WHERE id = cat.parent_id) 
+                                            END AS parent, 
+                                            items.created_at 
+                                            FROM items LEFT JOIN users ON items.seller_id = users.id LEFT JOIN categories AS cat ON items.category_id = cat.id 
+                                            WHERE items.status IN (?,?) AND (items.created_at < ? OR (items.created_at <=? AND items.id < ?)) '.'ORDER BY items.created_at DESC, items.id DESC LIMIT ?');
                 $r = $sth->execute([
                     self::ITEM_STATUS_ON_SALE,
                     self::ITEM_STATUS_SOLD_OUT,
@@ -272,7 +278,14 @@ class Service
                 }
             } else {
                 // 1st page
-                $sth = $this->dbh->prepare('SELECT * FROM `items` WHERE `status` IN (?,?) ORDER BY `created_at` DESC, `id` DESC LIMIT ?');
+                $sth = $this->dbh->prepare('SELECT items.id, items.seller_id, users.account_name, users.num_sell_items, items.status, items.name, items.price, items.image_name, items.category_id, cat.category_name, cat.parent_id,
+                                            CASE cat.parent_id 
+                                            WHEN 0 THEN NULL 
+                                            ELSE (SELECT category_name AS parent_cat_name FROM categories WHERE id = cat.parent_id) 
+                                            END AS parent, 
+                                            items.created_at 
+                                            FROM items LEFT JOIN users ON items.seller_id = users.id LEFT JOIN categories AS cat ON items.category_id = cat.id 
+                                            WHERE items.status IN (?,?) ORDER BY items.created_at DESC, items.id DESC LIMIT ?');
                 $r = $sth->execute([
                     self::ITEM_STATUS_ON_SALE,
                     self::ITEM_STATUS_SOLD_OUT,
@@ -286,15 +299,30 @@ class Service
 
             $itemSimples = [];
             foreach ($items as $item) {
-                $seller = $this->getUserSimpleByID($item['seller_id']);
-                if ($seller === false) {
+                //$seller = $this->getUserSimpleByID($item['seller_id']);
+                if ( !isset($item['account_name']) ) {
                     return $response->withStatus(StatusCode::HTTP_NOT_FOUND)->withJson(['error' => 'seller not found']);
                 }
 
-                $category = $this->getCategoryByID($item['category_id']);
-                if ($category === false) {
+                $seller = ['id'=> $item['seller_id'],
+                            'account_name'=>$item['account_name'],
+                            'num_sell_items'=>$item['num_sell_items'],
+                        ];
+
+                //$category = $this->getCategoryByID($item['category_id']);
+                if ( !isset($item['parent']) ) {
                     return $response->withStatus(StatusCode::HTTP_NOT_FOUND)->withJson(['error' => 'category not found']);
                 }
+
+                $category = ['id'=>$item['category_id'],
+                            'parent_id'=>$item['parent_id'],
+                            'category_name'=>$item['category_name'],
+                          ];
+                
+                if( isset($item['parent']) ) {
+                    $category['parent_category_name'] = $item['parent'];
+                }
+
                 $itemSimples[] = [
                   'id' => (int) $item['id'],
                   'seller_id' => (int) $item['seller_id'],
@@ -357,8 +385,14 @@ class Service
             if (!empty($itemId) && $createdAt > 0) {
                 // paging
                 $in = str_repeat('?,', count($categoryIds) - 1) . '?';
-                $sth = $this->dbh->prepare("SELECT * FROM `items` WHERE `status` IN (?,?) AND category_id IN (${in}) AND (`created_at` < ? OR (`created_at` <= ? AND `id` < ?)) ".
-                    "ORDER BY `created_at` DESC, `id` DESC LIMIT ?");
+                $sth = $this->dbh->prepare("SELECT items.id, items.seller_id, users.account_name, users.num_sell_items, items.status, items.name, items.price, items.image_name, items.category_id, cat.category_name, cat.parent_id,
+                                            CASE cat.parent_id 
+                                            WHEN 0 THEN NULL 
+                                            ELSE (SELECT category_name AS parent_cat_name FROM categories WHERE id = cat.parent_id) 
+                                            END AS parent, 
+                                            items.created_at 
+                                            FROM items LEFT JOIN users ON items.seller_id = users.id LEFT JOIN categories AS cat ON items.category_id = cat.id 
+                                            WHERE items.status IN (?,?) AND items.category_id IN (${in}) AND (items.created_at < ? OR (items.created_at <= ? AND items.id < ?)) "."ORDER BY items.created_at DESC, items.id DESC LIMIT ?");
                 $r = $sth->execute(array_merge(
                     [self::ITEM_STATUS_ON_SALE, self::ITEM_STATUS_SOLD_OUT],
                     $categoryIds,
@@ -375,7 +409,14 @@ class Service
             } else {
                 // 1st page
                 $in = str_repeat('?,', count($categoryIds) - 1) . '?';
-                $sth = $this->dbh->prepare("SELECT * FROM `items` WHERE `status` IN (?,?) AND category_id IN (${in}) ORDER BY created_at DESC, id DESC LIMIT ?");
+                $sth = $this->dbh->prepare("SELECT items.id, items.seller_id, users.account_name, users.num_sell_items, items.status, items.name, items.price, items.image_name, items.category_id, cat.category_name, cat.parent_id,
+                                            CASE cat.parent_id 
+                                            WHEN 0 THEN NULL 
+                                            ELSE (SELECT category_name AS parent_cat_name FROM categories WHERE id = cat.parent_id) 
+                                            END AS parent, 
+                                            items.created_at 
+                                            FROM items LEFT JOIN users ON items.seller_id = users.id LEFT JOIN categories AS cat ON items.category_id = cat.id 
+                                            WHERE items.status IN (?,?) AND items.category_id IN (${in}) ORDER BY items.created_at DESC, items.id DESC LIMIT ?");
                 $r = $sth->execute(array_merge(
                     [self::ITEM_STATUS_ON_SALE, self::ITEM_STATUS_SOLD_OUT],
                     $categoryIds,
@@ -389,15 +430,30 @@ class Service
 
             $itemSimples = [];
             foreach ($items as $item) {
-                $seller = $this->getUserSimpleByID($item['seller_id']);
-                if ($seller === false) {
+                //$seller = $this->getUserSimpleByID($item['seller_id']);
+                if ( !isset($item['account_name']) ) {
                     return $response->withStatus(StatusCode::HTTP_NOT_FOUND)->withJson(['error' => 'seller not found']);
                 }
 
-                $category = $this->getCategoryByID($item['category_id']);
-                if ($category === false) {
+                $seller = ['id'=> $item['seller_id'],
+                            'account_name'=>$item['account_name'],
+                            'num_sell_items'=>$item['num_sell_items'],
+                        ];
+
+                //$category = $this->getCategoryByID($item['category_id']);
+                if ( !isset($item['parent']) ) {
                     return $response->withStatus(StatusCode::HTTP_NOT_FOUND)->withJson(['error' => 'category not found']);
                 }
+
+                $category = ['id'=>$item['category_id'],
+                            'parent_id'=>$item['parent_id'],
+                            'category_name'=>$item['category_name'],
+                          ];
+                
+                if( isset($item['parent']) ) {
+                    $category['parent_category_name'] = $item['parent'];
+                }
+
                 $itemSimples[] = [
                     'id' => $item['id'],
                     'seller_id' => $item['seller_id'],
@@ -447,8 +503,14 @@ class Service
         try {
             if ($itemId !== "" && $createdAt > 0) {
                 // paging
-                $sth = $this->dbh->prepare('SELECT * FROM `items` WHERE `seller_id` = ? AND `status` IN (?,?,?) AND (`created_at` < ? OR (`created_at` <= ? AND `id` < ?)) ' .
-                            'ORDER BY `created_at` DESC, `id` DESC LIMIT ?');
+                $sth = $this->dbh->prepare('SELECT items.id, items.seller_id, users.account_name, users.num_sell_items, items.status, items.name, items.price, items.image_name, items.category_id, cat.category_name, cat.parent_id,
+                                            CASE cat.parent_id 
+                                            WHEN 0 THEN NULL 
+                                            ELSE (SELECT category_name AS parent_cat_name FROM categories WHERE id = cat.parent_id) 
+                                            END AS parent, 
+                                            items.created_at 
+                                            FROM items LEFT JOIN users ON items.seller_id = users.id LEFT JOIN categories AS cat ON items.category_id = cat.id 
+                                            WHERE items.seller_id = ? AND items.status IN (?,?,?) AND (items.created_at < ? OR (items.created_at <= ? AND items.id < ?)) '.'ORDER BY items.created_at DESC, items.id DESC LIMIT ?');
                 $r = $sth->execute([
                     $user['id'],
                     self::ITEM_STATUS_ON_SALE,
@@ -464,7 +526,14 @@ class Service
                 }
             } else {
                 // 1st page
-                $sth = $this->dbh->prepare('SELECT * FROM `items` WHERE `seller_id` = ? AND `status` IN (?,?,?) ORDER BY `created_at` DESC, `id` DESC LIMIT ?');
+                $sth = $this->dbh->prepare('SELECT items.id, items.seller_id, users.account_name, users.num_sell_items, items.status, items.name, items.price, items.image_name, items.category_id, cat.category_name, cat.parent_id,
+                                            CASE cat.parent_id 
+                                            WHEN 0 THEN NULL 
+                                            ELSE (SELECT category_name AS parent_cat_name FROM categories WHERE id = cat.parent_id) 
+                                            END AS parent, 
+                                            items.created_at 
+                                            FROM items LEFT JOIN users ON items.seller_id = users.id LEFT JOIN categories AS cat ON items.category_id = cat.id 
+                                            WHERE items.seller_id = ? AND items.status IN (?,?,?) ORDER BY items.created_at DESC, items.id DESC LIMIT ?');
                 $r = $sth->execute([
                     $user['id'],
                     self::ITEM_STATUS_ON_SALE,
@@ -480,15 +549,30 @@ class Service
 
             $itemSimples = [];
             foreach ($items as $item) {
-                $seller = $this->getUserSimpleByID($item['seller_id']);
-                if ($seller === false) {
+                //$seller = $this->getUserSimpleByID($item['seller_id']);
+                if ( !isset($item['account_name']) ) {
                     return $response->withStatus(StatusCode::HTTP_NOT_FOUND)->withJson(['error' => 'seller not found']);
                 }
 
-                $category = $this->getCategoryByID($item['category_id']);
-                if ($category === false) {
+                $seller = ['id'=> $item['seller_id'],
+                            'account_name'=>$item['account_name'],
+                            'num_sell_items'=>$item['num_sell_items'],
+                        ];
+
+                //$category = $this->getCategoryByID($item['category_id']);
+                if ( !isset($item['parent']) ) {
                     return $response->withStatus(StatusCode::HTTP_NOT_FOUND)->withJson(['error' => 'category not found']);
                 }
+
+                $category = ['id'=>$item['category_id'],
+                            'parent_id'=>$item['parent_id'],
+                            'category_name'=>$item['category_name'],
+                          ];
+                
+                if( isset($item['parent']) ) {
+                    $category['parent_category_name'] = $item['parent'];
+                }
+
                 $itemSimples[] = [
                     'id' => $item['id'],
                     'seller_id' => $item['seller_id'],
@@ -541,9 +625,14 @@ class Service
 
             if ($itemId !== 0 && $createdAt > 0) {
                 // paging
-                $sth = $this->dbh->prepare('SELECT * FROM `items` WHERE '.
-                    '(`seller_id` = ? OR `buyer_id` = ?) AND `status` IN (?,?,?,?,?) AND (`created_at` < ? OR (`created_at` <=? AND `id` < ?)) '.
-                    'ORDER BY `created_at` DESC, `id` DESC LIMIT ?');
+                $sth = $this->dbh->prepare('SELECT items.id, items.seller_id, users.account_name, users.num_sell_items, items.status, items.name, items.price, items.image_name, items.category_id, items.description, items.buyer_id, cat.category_name, cat.parent_id,
+                                            CASE cat.parent_id 
+                                            WHEN 0 THEN NULL 
+                                            ELSE (SELECT category_name AS parent_cat_name FROM categories WHERE id = cat.parent_id) 
+                                            END AS parent, 
+                                            items.created_at 
+                                            FROM items LEFT JOIN users ON items.seller_id = users.id LEFT JOIN categories AS cat ON items.category_id = cat.id 
+                                            WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) AND (items.created_at < ? OR (items.created_at <=? AND items.id < ?)) ORDER BY items.created_at DESC, items.id DESC LIMIT ?');
                 $r = $sth->execute([
                    $user['id'],
                    $user['id'],
@@ -562,9 +651,14 @@ class Service
                 }
             } else {
                 // 1st page
-                $sth = $this->dbh->prepare('SELECT * FROM `items` WHERE ' .
-                    '(`seller_id` = ? OR `buyer_id` = ?) AND `status` IN (?,?,?,?,?) ' .
-                    'ORDER BY `created_at` DESC, `id` DESC LIMIT ?');
+                $sth = $this->dbh->prepare('SELECT items.id, items.seller_id, users.account_name, users.num_sell_items, items.status, items.name, items.price, items.image_name, items.category_id, items.description, items.buyer_id, cat.category_name, cat.parent_id,
+                                            CASE cat.parent_id 
+                                            WHEN 0 THEN NULL 
+                                            ELSE (SELECT category_name AS parent_cat_name FROM categories WHERE id = cat.parent_id) 
+                                            END AS parent, 
+                                            items.created_at 
+                                            FROM items LEFT JOIN users ON items.seller_id = users.id LEFT JOIN categories AS cat ON items.category_id = cat.id 
+                                            WHERE (items.seller_id = ? OR items.buyer_id = ?) AND items.status IN (?,?,?,?,?) ORDER BY items.created_at DESC, items.id DESC LIMIT ?');
                 $r = $sth->execute([
                     $user['id'],
                     $user['id'],
@@ -582,17 +676,32 @@ class Service
             $items = $sth->fetchAll(PDO::FETCH_ASSOC);
             $itemDetails = [];
             foreach ($items as $item) {
-                $seller = $this->getUserSimpleByID($item['seller_id']);
-                if ($seller === false) {
+                //$seller = $this->getUserSimpleByID($item['seller_id']);
+                if ( !isset($item['account_name']) ) {
                     $this->dbh->rollBack();
                     return $response->withStatus(StatusCode::HTTP_NOT_FOUND)->withJson(['error' => 'seller not found']);
                 }
 
-                $category = $this->getCategoryByID($item['category_id']);
-                if ($category === false) {
+                $seller = ['id'=> $item['seller_id'],
+                            'account_name'=>$item['account_name'],
+                            'num_sell_items'=>$item['num_sell_items'],
+                        ];
+
+                //$category = $this->getCategoryByID($item['category_id']);
+                if ( !isset($item['parent']) ) {
                     $this->dbh->rollBack();
                     return $response->withStatus(StatusCode::HTTP_NOT_FOUND)->withJson(['error' => 'seller not found']);
                 }
+
+                $category = ['id'=>$item['category_id'],
+                            'parent_id'=>$item['parent_id'],
+                            'category_name'=>$item['category_name'],
+                          ];
+                
+                if( isset($item['parent']) ) {
+                    $category['parent_category_name'] = $item['parent'];
+                }
+
                 $detail = [
                         'id' => (int) $item['id'],
                         'seller_id' => (int) $item['seller_id'],
