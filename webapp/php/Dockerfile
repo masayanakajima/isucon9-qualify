@@ -1,4 +1,4 @@
-FROM php:7.2-cli
+FROM php:7.4-cli
 
 WORKDIR /var/www/html/php/public
 
@@ -29,6 +29,7 @@ RUN docker-php-ext-configure zip && \
     docker-php-ext-enable xdebug
 
 ENV DOCKERIZE_VERSION v0.6.1
+ENV PHP_CLI_SERVER_WORKERS 30
 RUN wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
     && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
     && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
