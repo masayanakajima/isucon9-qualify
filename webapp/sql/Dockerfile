@@ -4,6 +4,8 @@ WORKDIR /
 
 EXPOSE 3306
 
+COPY mysqld.cnf /etc/mysql/mysql.conf.d/mysqld.cnf
+
 RUN apt-get update
 RUN apt-get install -y wget libdbd-mysql-perl libdbi-perl libio-socket-ssl-perl libnet-ssleay-perl libterm-readkey-perl
 RUN wget https://www.percona.com/downloads/percona-toolkit/3.0.10/binary/debian/xenial/x86_64/percona-toolkit_3.0.10-1.xenial_amd64.deb

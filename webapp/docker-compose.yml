@@ -5,6 +5,7 @@ services:
     volumes:
       - ./sql/docker-init:/docker-entrypoint-initdb.d
       - ./sql/init.sh:/init.sh
+      - ./sql/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: isucari
